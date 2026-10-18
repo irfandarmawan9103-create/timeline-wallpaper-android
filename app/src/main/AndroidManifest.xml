@@ -1,0 +1,29 @@
+
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+    &lt;application
+        android:allowBackup="true"
+        android:label="Timeline Wallpaper"
+        android:theme="@android:style/Theme.Material.NoActionBar"&gt;
+
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN"/&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER"/&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+
+        &lt;receiver
+            android:name=".TimelineWidgetReceiver"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.appwidget.action.APPWIDGET_UPDATE"/&gt;
+            &lt;/intent-filter&gt;
+            &lt;meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/timeline_widget_info"/&gt;
+        &lt;/receiver&gt;
+
+    &lt;/application&gt;
+&lt;/manifest&gt;
