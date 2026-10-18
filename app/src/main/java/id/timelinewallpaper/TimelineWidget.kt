@@ -2,19 +2,21 @@
 package id.timelinewallpaper
 
 import android.content.Context
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.core.toMutablePreferences
+import androidx.datastore.preferences.core.edit
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
-import androidx.glance.action.actionRunCallback
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.PreferencesGlanceStateDefinition
@@ -25,15 +27,12 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.text.FontWeight
 import androidx.glance.unit.ColorProvider
-import androidx.glance.state.GlanceStateDefinition
-import androidx.datastore.preferences.core.Preferences
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 private val Black = Color(0xFF000000)
 private val White = Color(0xFFF7F7F7)
-private val Teal = Color(0xFF00A99F)
 private val TealLight = Color(0xFF55E4DB)
 private val Muted = Color(0xFF858585)
 
@@ -50,9 +49,6 @@ private val dateKey = stringPreferencesKey("saved_date")
 private val TaskIndexKey = ActionParameters.Key<Int>("task_index")
 
 class TimelineWidget : GlanceAppWidget() {
-    override val stateDefinition: GlanceStateDefinition<*> =
-        PreferencesGlanceStateDefinition
-
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             val now = Date()
@@ -66,9 +62,9 @@ class TimelineWidget : GlanceAppWidget() {
             val prefs = currentState<Preferences>()
             val todayKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .format(now)
+
             val flags = tasks.indices.map { i ->
-                if (prefs[dateKey] == todayKey) prefs[taskKey(i)] ?: false
-                else false
+                prefs[dateKey] == todayKey && (prefs[taskKey(i)] ?: false)
             }
             val done = flags.count { it }
             val pct = done * 100 / tasks.size
@@ -120,7 +116,9 @@ class TimelineWidget : GlanceAppWidget() {
                                     )
                                 ),
                             style = TextStyle(
-                                color = ColorProvider(if (flags[i]) TealLight else White),
+                                color = ColorProvider(
+                                    if (flags[i]) TealLight else White
+                                ),
                                 fontWeight = FontWeight.Bold
                             )
                         )
@@ -164,7 +162,7 @@ class TimelineWidget : GlanceAppWidget() {
 }
 
 class ToggleTaskAction : ActionCallback {
-    override suspend fun onRun(
+    override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,
         parameters: ActionParameters
@@ -176,7 +174,9 @@ class ToggleTaskAction : ActionCallback {
             .format(Date())
 
         updateAppWidgetState(
-            context, PreferencesGlanceStateDefinition, glanceId
+            context,
+            PreferencesGlanceStateDefinition,
+            glanceId
         ) { prefs ->
             val editor = prefs.toMutablePreferences()
             if (editor[dateKey] != todayKey) {
